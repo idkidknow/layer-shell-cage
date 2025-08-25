@@ -56,7 +56,7 @@ static const struct zwlr_layer_surface_v1_listener layer_surface_listener = {
 };
 
 struct cg_layer_shell_backend *
-layer_shell_backend_create(struct wl_event_loop *loop, struct wl_display *remote_display)
+layer_shell_backend_create(struct wl_event_loop *loop, struct wl_display *remote_display, uint32_t layer)
 {
 	struct cg_layer_shell_backend *backend = calloc(1, sizeof(*backend));
 	struct wlr_backend *inner_backend = wlr_wl_backend_create(loop, remote_display);
@@ -67,7 +67,7 @@ layer_shell_backend_create(struct wl_event_loop *loop, struct wl_display *remote
 	struct wl_surface *surface = wl_compositor_create_surface(backend->compositor);
 	backend->surface = surface;
 	struct zwlr_layer_surface_v1 *layer_surface = zwlr_layer_shell_v1_get_layer_surface(
-		backend->layer_shell, surface, NULL, ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND, "cage_layer");
+		backend->layer_shell, surface, NULL, layer, "cage_layer");
 	zwlr_layer_surface_v1_add_listener(layer_surface, &layer_surface_listener, backend);
 	zwlr_layer_surface_v1_set_anchor(
 		layer_surface, ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM |

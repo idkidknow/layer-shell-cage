@@ -67,7 +67,9 @@ struct cg_server {
 	bool return_app_code;
 	bool terminated;
 	enum wlr_log_importance log_level;
+
 	bool use_layer_shell_backend;
+	uint32_t layer_shell_layer;
 	struct cg_layer_shell_backend *layer_shell_backend;
 };
 

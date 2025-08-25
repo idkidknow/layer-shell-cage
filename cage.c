@@ -8,7 +8,7 @@
 #define _POSIX_C_SOURCE 200112L
 
 #include "config.h"
-
+#include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
@@ -16,12 +16,12 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <wayland-server-core.h>
-#include <wlr/backend.h>
-#include <wlr/backend/wayland.h>
 #include <wayland-client-core.h>
 #include <wayland-client-protocol.h>
+#include <wayland-server-core.h>
 #include <wayland-util.h>
+#include <wlr/backend.h>
+#include <wlr/backend/wayland.h>
 #include <wlr/render/allocator.h>
 #include <wlr/render/wlr_renderer.h>
 #include <wlr/types/wlr_compositor.h>
@@ -54,8 +54,8 @@
 #include <wlr/xwayland.h>
 #endif
 
-#include "layer_shell_backend.h"
 #include "idle_inhibit_v1.h"
+#include "layer_shell_backend.h"
 #include "output.h"
 #include "seat.h"
 #include "server.h"
@@ -246,7 +246,7 @@ static bool
 parse_args(struct cg_server *server, int argc, char *argv[])
 {
 	int c;
-	while ((c = getopt(argc, argv, "dDhm:svl")) != -1) {
+	while ((c = getopt(argc, argv, "dDhm:svl:")) != -1) {
 		switch (c) {
 		case 'd':
 			server->xdg_decoration = true;
@@ -272,6 +272,19 @@ parse_args(struct cg_server *server, int argc, char *argv[])
 			exit(0);
 		case 'l':
 			server->use_layer_shell_backend = true;
+			server->layer_shell_layer = ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND;
+			if (strcmp(optarg, "background") == 0) {
+				server->layer_shell_layer = ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND;
+			} else if (strcmp(optarg, "bottom") == 0) {
+				server->layer_shell_layer = ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM;
+			} else if (strcmp(optarg, "top") == 0) {
+				server->layer_shell_layer = ZWLR_LAYER_SHELL_V1_LAYER_TOP;
+			} else if (strcmp(optarg, "overlay") == 0) {
+				server->layer_shell_layer = ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY;
+			} else {
+				fprintf(stderr, "Invalid layer\n");
+				return false;
+			}
 			break;
 		default:
 			usage(stderr, argv[0]);
@@ -327,7 +340,7 @@ main(int argc, char *argv[])
 			ret = 1;
 			goto end;
 		}
-		server.layer_shell_backend = layer_shell_backend_create(event_loop, display);
+		server.layer_shell_backend = layer_shell_backend_create(event_loop, display, server.layer_shell_layer);
 		server.backend = server.layer_shell_backend->inner;
 
 	} else {

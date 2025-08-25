@@ -15,7 +15,7 @@ struct cg_layer_shell_backend {
     struct wlr_output *output;
 };
 
-struct cg_layer_shell_backend *layer_shell_backend_create(struct wl_event_loop *loop, struct wl_display *remote_display);
+struct cg_layer_shell_backend *layer_shell_backend_create(struct wl_event_loop *loop, struct wl_display *remote_display, uint32_t layer);
 
 struct wlr_output *layer_shell_backend_output_create(struct cg_layer_shell_backend *backend);
 
