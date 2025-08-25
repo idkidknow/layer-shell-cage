@@ -1,4 +1,6 @@
-project('cage', 'c',
+project(
+  'cage',
+  'c',
   version: '0.2.0',
   license: 'MIT',
   meson_version: '>=0.58.1',
@@ -19,7 +21,7 @@ add_project_arguments(
 )
 
 if get_option('buildtype').startswith('debug')
-  add_project_arguments('-DDEBUG', language : 'c')
+  add_project_arguments('-DDEBUG', language: 'c')
 endif
 
 cc = meson.get_compiler('c')
@@ -31,22 +33,35 @@ if is_freebsd
       '-Wno-format-extra-args',
       '-Wno-gnu-zero-variadic-macro-arguments',
     ],
-    language: 'c'
+    language: 'c',
   )
 endif
 
-wlroots        = dependency('wlroots-0.19', fallback: ['wlroots', 'wlroots'])
+wlroots = dependency('wlroots-0.19', fallback: ['wlroots', 'wlroots'])
 wayland_protos = dependency('wayland-protocols', version: '>=1.14')
+wlr_protos = dependency('wlr-protocols')
 wayland_server = dependency('wayland-server')
-xkbcommon      = dependency('xkbcommon')
-math           = cc.find_library('m')
+wayland_client = dependency('wayland-client')
+xkbcommon = dependency('xkbcommon')
+math = cc.find_library('m')
 
 wl_protocol_dir = wayland_protos.get_variable('pkgdatadir')
+wlr_protocol_dir = wlr_protos.get_variable('pkgdatadir')
 wayland_scanner = find_program('wayland-scanner')
 wayland_scanner_server = generator(
   wayland_scanner,
   output: '@BASENAME@-protocol.h',
   arguments: ['server-header', '@INPUT@', '@OUTPUT@'],
+)
+wayland_scanner_client = generator(
+  wayland_scanner,
+  output: '@BASENAME@-client-protocol.h',
+  arguments: ['client-header', '@INPUT@', '@OUTPUT@'],
+)
+wayland_scanner_code = generator(
+  wayland_scanner,
+  output: '@BASENAME@-protocol.c',
+  arguments: ['private-code', '@INPUT@', '@OUTPUT@'],
 )
 
 server_protocols = [
@@ -62,6 +77,15 @@ endforeach
 
 server_protos = declare_dependency(
   sources: server_protos_headers,
+)
+
+xdg_shell_protocol_xml = join_paths([wl_protocol_dir, 'stable/xdg-shell/xdg-shell.xml'])
+xdg_shell_protocol_code = wayland_scanner_code.process(xdg_shell_protocol_xml)
+layer_shell_protocol_xml = join_paths([wlr_protocol_dir, 'unstable/wlr-layer-shell-unstable-v1.xml'])
+layer_shell_protocol_client = wayland_scanner_client.process(layer_shell_protocol_xml)
+layer_shell_protocol_code = wayland_scanner_code.process(layer_shell_protocol_xml)
+layer_shell_protocol_dep = declare_dependency(
+  sources: [layer_shell_protocol_client, layer_shell_protocol_code, xdg_shell_protocol_code],
 )
 
 have_xwayland = wlroots.get_variable(pkgconfig: 'have_xwayland', internal: 'have_xwayland') == 'true'
@@ -89,9 +113,7 @@ if scdoc.found()
   scdoc_prog = find_program(scdoc.get_variable('scdoc'), native: true)
   sh = find_program('sh', native: true)
   mandir = get_option('mandir')
-  man_files = [
-    'cage.1.scd'
-  ]
+  man_files = ['cage.1.scd']
   foreach filename : man_files
     topic = filename.split('.')[-3].split('/')[-1]
     section = filename.split('.')[-2]
@@ -101,11 +123,9 @@ if scdoc.found()
       output,
       input: filename,
       output: output,
-      command: [
-        sh, '-c', '@0@ < @INPUT@ > @1@'.format(scdoc_prog.full_path(), output)
-      ],
+      command: [sh, '-c', '@0@ < @INPUT@ > @1@'.format(scdoc_prog.full_path(), output)],
       install: true,
-      install_dir: '@0@/man@1@'.format(mandir, section)
+      install_dir: '@0@/man@1@'.format(mandir, section),
     )
   endforeach
 endif
@@ -117,18 +137,18 @@ cage_sources = [
   'seat.c',
   'view.c',
   'xdg_shell.c',
+  'layer_shell_backend.c',
 ]
 
 cage_headers = [
-  configure_file(input: 'config.h.in',
-                 output: 'config.h',
-                 configuration: conf_data),
+  configure_file(input: 'config.h.in', output: 'config.h', configuration: conf_data),
   'idle_inhibit_v1.h',
   'output.h',
   'seat.h',
   'server.h',
   'view.h',
   'xdg_shell.h',
+  'layer_shell_backend.h',
 ]
 
 if conf_data.get('CAGE_HAS_XWAYLAND', 0) == 1
@@ -141,7 +161,9 @@ executable(
   cage_sources + cage_headers,
   dependencies: [
     server_protos,
+    layer_shell_protocol_dep,
     wayland_server,
+    wayland_client,
     wlroots,
     xkbcommon,
     math,
@@ -149,11 +171,5 @@ executable(
   install: true,
 )
 
-summary = [
-  '',
-  'Cage @0@'.format(version),
-  '',
-  '    xwayland: @0@'.format(have_xwayland),
-  ''
-]
+summary = ['', 'Cage @0@'.format(version), '', '    xwayland: @0@'.format(have_xwayland), '']
 message('\n'.join(summary))

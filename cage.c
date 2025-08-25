@@ -5,7 +5,6 @@
  *
  * See the LICENSE file accompanying this file.
  */
-
 #define _POSIX_C_SOURCE 200112L
 
 #include "config.h"
@@ -19,6 +18,10 @@
 #include <unistd.h>
 #include <wayland-server-core.h>
 #include <wlr/backend.h>
+#include <wlr/backend/wayland.h>
+#include <wayland-client-core.h>
+#include <wayland-client-protocol.h>
+#include <wayland-util.h>
 #include <wlr/render/allocator.h>
 #include <wlr/render/wlr_renderer.h>
 #include <wlr/types/wlr_compositor.h>
@@ -51,6 +54,7 @@
 #include <wlr/xwayland.h>
 #endif
 
+#include "layer_shell_backend.h"
 #include "idle_inhibit_v1.h"
 #include "output.h"
 #include "seat.h"
@@ -242,7 +246,7 @@ static bool
 parse_args(struct cg_server *server, int argc, char *argv[])
 {
 	int c;
-	while ((c = getopt(argc, argv, "dDhm:sv")) != -1) {
+	while ((c = getopt(argc, argv, "dDhm:svl")) != -1) {
 		switch (c) {
 		case 'd':
 			server->xdg_decoration = true;
@@ -266,6 +270,9 @@ parse_args(struct cg_server *server, int argc, char *argv[])
 		case 'v':
 			fprintf(stdout, "Cage version " CAGE_VERSION "\n");
 			exit(0);
+		case 'l':
+			server->use_layer_shell_backend = true;
+			break;
 		default:
 			usage(stderr, argv[0]);
 			return false;
@@ -312,7 +319,21 @@ main(int argc, char *argv[])
 	struct wl_event_source *sigint_source = wl_event_loop_add_signal(event_loop, SIGINT, handle_signal, &server);
 	struct wl_event_source *sigterm_source = wl_event_loop_add_signal(event_loop, SIGTERM, handle_signal, &server);
 
-	server.backend = wlr_backend_autocreate(event_loop, &server.session);
+	if (server.use_layer_shell_backend) {
+		wlr_log(WLR_INFO, "Use layer shell backend");
+		struct wl_display *display = wl_display_connect(NULL);
+		if (display == NULL) {
+			wlr_log(WLR_ERROR, "Unable to connect to the compositor");
+			ret = 1;
+			goto end;
+		}
+		server.layer_shell_backend = layer_shell_backend_create(event_loop, display);
+		server.backend = server.layer_shell_backend->inner;
+
+	} else {
+		server.backend = wlr_backend_autocreate(event_loop, &server.session);
+	}
+
 	if (!server.backend) {
 		wlr_log(WLR_ERROR, "Unable to create the wlroots backend");
 		ret = 1;
@@ -573,6 +594,10 @@ main(int argc, char *argv[])
 		wlr_log(WLR_ERROR, "Unable to start the wlroots backend");
 		ret = 1;
 		goto end;
+	}
+
+	if (server.use_layer_shell_backend) {
+		layer_shell_backend_output_create(server.layer_shell_backend);
 	}
 
 	if (setenv("WAYLAND_DISPLAY", socket, true) < 0) {

@@ -2,6 +2,7 @@
 #define CG_SERVER_H
 
 #include "config.h"
+#include "layer_shell_backend.h"
 
 #include <wayland-server-core.h>
 #include <wlr/types/wlr_idle_inhibit_v1.h>
@@ -66,6 +67,8 @@ struct cg_server {
 	bool return_app_code;
 	bool terminated;
 	enum wlr_log_importance log_level;
+	bool use_layer_shell_backend;
+	struct cg_layer_shell_backend *layer_shell_backend;
 };
 
 void server_terminate(struct cg_server *server);

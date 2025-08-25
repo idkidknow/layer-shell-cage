@@ -320,7 +320,7 @@ output_set_window_title(struct cg_output *output, const char *title)
 		return;
 	}
 
-	if (wlr_output_is_wl(wlr_output)) {
+	if (wlr_output_is_wl(wlr_output) && !output->server->use_layer_shell_backend) {
 		wlr_wl_output_set_title(wlr_output, title);
 #if WLR_HAS_X11_BACKEND
 	} else if (wlr_output_is_x11(wlr_output)) {
