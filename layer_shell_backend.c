@@ -110,7 +110,7 @@ static const struct zwlr_layer_surface_v1_listener layer_surface_listener = {
 
 struct cg_layer_shell_backend *
 layer_shell_backend_create(struct wl_event_loop *loop, struct wl_display *remote_display, uint32_t layer,
-			   const char *output_name, const char *namespace, bool interactivity)
+			   const char *output_name, const char *namespace, bool interactivity, int32_t exclusive_zone)
 {
 	struct cg_layer_shell_backend *backend = calloc(1, sizeof(*backend));
 
@@ -151,6 +151,8 @@ layer_shell_backend_create(struct wl_event_loop *loop, struct wl_display *remote
 		struct wl_region *region = wl_compositor_create_region(backend->compositor);
 		wl_surface_set_input_region(surface, region);
 	}
+
+	zwlr_layer_surface_v1_set_exclusive_zone(layer_surface, exclusive_zone);
 
 	zwlr_layer_surface_v1_add_listener(layer_surface, &layer_surface_listener, backend);
 	zwlr_layer_surface_v1_set_anchor(

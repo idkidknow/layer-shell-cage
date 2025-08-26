@@ -73,6 +73,7 @@ struct cg_server {
 	const char *layer_shell_output_name;
 	const char *layer_shell_namespace;
 	bool layer_shell_interactivity;
+	int32_t layer_shell_exclusive_zone;
 	struct cg_layer_shell_backend *layer_shell_backend;
 };
 
