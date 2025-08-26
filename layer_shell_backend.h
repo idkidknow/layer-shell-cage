@@ -28,7 +28,7 @@ struct cg_layer_shell_backend {
 
 struct cg_layer_shell_backend *layer_shell_backend_create(struct wl_event_loop *loop, struct wl_display *remote_display,
 							  uint32_t layer, const char *output_name,
-							  const char *namespace);
+							  const char *namespace, bool interactivity);
 
 struct wlr_output *layer_shell_backend_output_create(struct cg_layer_shell_backend *backend);
 

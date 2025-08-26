@@ -110,7 +110,7 @@ static const struct zwlr_layer_surface_v1_listener layer_surface_listener = {
 
 struct cg_layer_shell_backend *
 layer_shell_backend_create(struct wl_event_loop *loop, struct wl_display *remote_display, uint32_t layer,
-			   const char *output_name, const char *namespace)
+			   const char *output_name, const char *namespace, bool interactivity)
 {
 	struct cg_layer_shell_backend *backend = calloc(1, sizeof(*backend));
 
@@ -143,13 +143,21 @@ layer_shell_backend_create(struct wl_event_loop *loop, struct wl_display *remote
 	backend->surface = surface;
 	struct zwlr_layer_surface_v1 *layer_surface =
 		zwlr_layer_shell_v1_get_layer_surface(backend->layer_shell, surface, host_output, layer, namespace);
+
+	if (interactivity) {
+		zwlr_layer_surface_v1_set_keyboard_interactivity(
+			layer_surface, ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_ON_DEMAND);
+	} else {
+		struct wl_region *region = wl_compositor_create_region(backend->compositor);
+		wl_surface_set_input_region(surface, region);
+	}
+
 	zwlr_layer_surface_v1_add_listener(layer_surface, &layer_surface_listener, backend);
 	zwlr_layer_surface_v1_set_anchor(
 		layer_surface, ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM |
 				       ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT);
 	zwlr_layer_surface_v1_set_size(layer_surface, 0, 0);
-	zwlr_layer_surface_v1_set_keyboard_interactivity(layer_surface,
-							 ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_ON_DEMAND);
+
 	return backend;
 }
 

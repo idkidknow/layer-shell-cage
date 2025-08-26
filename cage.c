@@ -238,9 +238,10 @@ usage(FILE *file, const char *cage)
 		" -s\t Allow VT switching\n"
 		" -v\t Show the version number and exit\n"
 		"\n"
-		" -l <layer> Use layer shell backend (background, bottom, top, overlay)\n"
-		" -o <output_name> Specify the output to display when using layer shell backend\n"
-		" -n <namespace> Specify the namespace of the layer shell (default: cage)\n"
+		" -l <layer>\t Use layer shell backend (background, bottom, top, overlay)\n"
+		" -o <output_name>\t Specify the output to display when using layer shell backend\n"
+		" -n <namespace>\t Specify the namespace of the layer shell (default: cage)\n"
+		" -i\t Allow interactivity with mouse, keyboard, etc. (disabled by default)\n"
 		"\n"
 		" Use -- when you want to pass arguments to APPLICATION\n",
 		cage);
@@ -250,7 +251,7 @@ static bool
 parse_args(struct cg_server *server, int argc, char *argv[])
 {
 	int c;
-	while ((c = getopt(argc, argv, "dDhm:svl:o:n:")) != -1) {
+	while ((c = getopt(argc, argv, "dDhm:svl:o:n:i")) != -1) {
 		switch (c) {
 		case 'd':
 			server->xdg_decoration = true;
@@ -295,6 +296,9 @@ parse_args(struct cg_server *server, int argc, char *argv[])
 			break;
 		case 'n':
 			server->layer_shell_namespace = optarg;
+			break;
+		case 'i':
+			server->layer_shell_interactivity = true;
 			break;
 		default:
 			usage(stderr, argv[0]);
@@ -350,9 +354,9 @@ main(int argc, char *argv[])
 			ret = 1;
 			goto end;
 		}
-		server.layer_shell_backend =
-			layer_shell_backend_create(event_loop, display, server.layer_shell_layer,
-						   server.layer_shell_output_name, server.layer_shell_namespace);
+		server.layer_shell_backend = layer_shell_backend_create(
+			event_loop, display, server.layer_shell_layer, server.layer_shell_output_name,
+			server.layer_shell_namespace, server.layer_shell_interactivity);
 		server.backend = server.layer_shell_backend->inner;
 	} else {
 		server.backend = wlr_backend_autocreate(event_loop, &server.session);

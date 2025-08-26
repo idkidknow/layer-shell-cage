@@ -72,6 +72,7 @@ struct cg_server {
 	uint32_t layer_shell_layer;
 	const char *layer_shell_output_name;
 	const char *layer_shell_namespace;
+	bool layer_shell_interactivity;
 	struct cg_layer_shell_backend *layer_shell_backend;
 };
 
