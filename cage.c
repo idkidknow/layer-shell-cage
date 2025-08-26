@@ -238,6 +238,8 @@ usage(FILE *file, const char *cage)
 		" -s\t Allow VT switching\n"
 		" -v\t Show the version number and exit\n"
 		"\n"
+		" -l <layer> Use layer shell backend (background, bottom, top, overlay)"
+		"\n"
 		" Use -- when you want to pass arguments to APPLICATION\n",
 		cage);
 }
