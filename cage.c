@@ -240,6 +240,7 @@ usage(FILE *file, const char *cage)
 		"\n"
 		" -l <layer> Use layer shell backend (background, bottom, top, overlay)\n"
 		" -o <output_name> Specify the output to display when using layer shell backend\n"
+		" -n <namespace> Specify the namespace of the layer shell (default: cage)\n"
 		"\n"
 		" Use -- when you want to pass arguments to APPLICATION\n",
 		cage);
@@ -249,7 +250,7 @@ static bool
 parse_args(struct cg_server *server, int argc, char *argv[])
 {
 	int c;
-	while ((c = getopt(argc, argv, "dDhm:svl:o:")) != -1) {
+	while ((c = getopt(argc, argv, "dDhm:svl:o:n:")) != -1) {
 		switch (c) {
 		case 'd':
 			server->xdg_decoration = true;
@@ -291,6 +292,9 @@ parse_args(struct cg_server *server, int argc, char *argv[])
 			break;
 		case 'o':
 			server->layer_shell_output_name = optarg;
+			break;
+		case 'n':
+			server->layer_shell_namespace = optarg;
 			break;
 		default:
 			usage(stderr, argv[0]);
@@ -346,10 +350,10 @@ main(int argc, char *argv[])
 			ret = 1;
 			goto end;
 		}
-		server.layer_shell_backend = layer_shell_backend_create(event_loop, display, server.layer_shell_layer,
-									server.layer_shell_output_name);
+		server.layer_shell_backend =
+			layer_shell_backend_create(event_loop, display, server.layer_shell_layer,
+						   server.layer_shell_output_name, server.layer_shell_namespace);
 		server.backend = server.layer_shell_backend->inner;
-
 	} else {
 		server.backend = wlr_backend_autocreate(event_loop, &server.session);
 	}
