@@ -238,7 +238,8 @@ usage(FILE *file, const char *cage)
 		" -s\t Allow VT switching\n"
 		" -v\t Show the version number and exit\n"
 		"\n"
-		" -l <layer> Use layer shell backend (background, bottom, top, overlay)"
+		" -l <layer> Use layer shell backend (background, bottom, top, overlay)\n"
+		" -o <output_name> Specify the output to display when using layer shell backend\n"
 		"\n"
 		" Use -- when you want to pass arguments to APPLICATION\n",
 		cage);
@@ -248,7 +249,7 @@ static bool
 parse_args(struct cg_server *server, int argc, char *argv[])
 {
 	int c;
-	while ((c = getopt(argc, argv, "dDhm:svl:")) != -1) {
+	while ((c = getopt(argc, argv, "dDhm:svl:o:")) != -1) {
 		switch (c) {
 		case 'd':
 			server->xdg_decoration = true;
@@ -287,6 +288,9 @@ parse_args(struct cg_server *server, int argc, char *argv[])
 				fprintf(stderr, "Invalid layer\n");
 				return false;
 			}
+			break;
+		case 'o':
+			server->layer_shell_output_name = optarg;
 			break;
 		default:
 			usage(stderr, argv[0]);
@@ -342,7 +346,8 @@ main(int argc, char *argv[])
 			ret = 1;
 			goto end;
 		}
-		server.layer_shell_backend = layer_shell_backend_create(event_loop, display, server.layer_shell_layer);
+		server.layer_shell_backend = layer_shell_backend_create(event_loop, display, server.layer_shell_layer,
+									server.layer_shell_output_name);
 		server.backend = server.layer_shell_backend->inner;
 
 	} else {
